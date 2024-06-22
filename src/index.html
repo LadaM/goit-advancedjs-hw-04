@@ -9,11 +9,18 @@
   </head>
   <body>
     <section>
-      <p>Form for entering the search request</p>
+      <form class="search-form" id="search-form">
+        <input
+        type="text"
+        name="searchQuery"
+        autocomplete="off"
+        placeholder="Search images..."
+        />
+        <button type="submit">Search</button>
+        </form>
     </section>
     <section>
       <div class="gallery">
-        <p>Here will be the gallery with found images...</p>
       </div>
     </section>
     <script type="module" src="./main.js"></script>
