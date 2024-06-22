@@ -79,26 +79,33 @@ async function loadImages(
 ) {
   elements.spinner.spin(elements.gallery);
   elements.submitBtn.setAttribute('disabled', 'disabled');
-  try {
-    const response = await getImagesByKeywords(searchQuery, page, per_page);
-    gallery.page += 1;
-    gallery.loadedImages += response.hits.length; // update loaded images count
-    if (gallery.loadedImages >= gallery.max_size) {
-      observer.unobserve(elements.contentLoader); // stop observing if max size reached
-    }
-    return response;
-  } catch (error) {
-    iziToast.error({
-      title: 'Error',
-      message: error.message,
-      position: 'topRight',
+  return getImagesByKeywords(searchQuery, page, per_page)
+    .then(response => {
+      gallery.page += 1;
+      gallery.loadedImages += response.hits.length; // update loaded images count
+      if (gallery.loadedImages >= gallery.max_size) {
+        observer.unobserve(elements.contentLoader); // stop observing if max size reached
+      }
+      return response;
+    })
+    .catch(error => {
+      if (gallery.page == 1) {
+        // when the rist call failed, we expect onSearch() to handle it
+        throw new Error(error);
+      } else {
+        // when any sunsequent call failed, we handle the error ourselves
+        iziToast.error({
+          title: 'Error',
+          message: error.message,
+          position: 'topRight',
+        });
+      }
+    })
+    .finally(() => {
+      elements.spinner.stop();
+      elements.submitBtn.removeAttribute('disabled');
     });
-    reject(error);
-  } finally {
-    elements.spinner.stop();
-    elements.submitBtn.removeAttribute('disabled');
-  }
- }
+}
 
 function renderImages(images) {
   let galleryContainer = document.querySelector('.gallery-container');
