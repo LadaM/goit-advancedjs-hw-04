@@ -28,6 +28,31 @@ const gallery = {
   loadedImages: 0,
 };
 
+const observerOptions = {
+  root: null,
+  rootMargin: '0px 0px 300px 0px',
+  threshold: 1.0,
+};
+
+const observer = new IntersectionObserver((entries, observer) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      loadImages().then(response => {
+        const images = response.hits;
+        renderImages(images);
+        if (gallery.loadedImages >= gallery.max_size) {
+          observer.unobserve(elements.contentLoader); // stop observing if max size reached
+          iziToast.info({
+            message:
+              "We're sorry, but you've reached the end of search results.",
+            position: 'topRight',
+          });
+        }
+      });
+    }
+  });
+}, observerOptions);
+
 async function onSearch(event) {
   event.preventDefault();
   elements.gallery.innerHTML = ''; // reset gallery content
@@ -41,12 +66,9 @@ async function onSearch(event) {
     const response = await loadImages();
     const images = response.hits;
     if (response.totalHits === 0) {
-      iziToast.error({
-        title: 'Error',
-        message:
-          'Sorry, there are no images matching your search query. Please try again.',
-        position: 'topRight',
-      });
+      showError(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
     } else {
       gallery.max_size = response.totalHits;
       renderImages(images);
@@ -60,16 +82,19 @@ async function onSearch(event) {
       }
     }
   } catch (error) {
-    iziToast.error({
-      title: 'Error',
-      message: error.message,
-      position: 'topRight',
-    });
+    showError(error.message);
   } finally {
     elements.spinner.stop();
     elements.submitBtn.removeAttribute('disabled');
     elements.form.reset();
   }
+}
+
+function showError(message) {
+  iziToast.error({
+    message: message,
+    position: 'topRight',
+  });
 }
 
 async function loadImages(
@@ -83,9 +108,6 @@ async function loadImages(
     .then(response => {
       gallery.page += 1;
       gallery.loadedImages += response.hits.length; // update loaded images count
-      if (gallery.loadedImages >= gallery.max_size) {
-        observer.unobserve(elements.contentLoader); // stop observing if max size reached
-      }
       return response;
     })
     .catch(error => {
@@ -94,11 +116,7 @@ async function loadImages(
         throw new Error(error);
       } else {
         // when any sunsequent call failed, we handle the error ourselves
-        iziToast.error({
-          title: 'Error',
-          message: error.message,
-          position: 'topRight',
-        });
+        showError(error.message);
       }
     })
     .finally(() => {
@@ -149,23 +167,11 @@ function renderImages(images) {
   elements.lightbox.refresh();
 }
 
-const observer = new IntersectionObserver(
-  entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting && gallery.loadedImages < gallery.max_size) {
-        observer.unobserve(elements.contentLoader); // Temporarily stop observing to prevent multiple triggers
-        loadImages().then(response => {
-          renderImages(response.hits);
-          if (gallery.loadedImages < gallery.max_size) {
-            observer.observe(elements.contentLoader); // Re-observe after loading more images
-          }
-        }); // Load more images when the loader is visible
-      }
-    });
-  },
-  {
-    root: null,
-    rootMargin: '0px 0px 300px 0px',
-    threshold: 1.0,
-  }
-);
+const { height: cardHeight } = document
+  .querySelector('.gallery')
+  .firstElementChild.getBoundingClientRect();
+
+window.scrollBy({
+  top: cardHeight * 2,
+  behavior: 'smooth',
+});
