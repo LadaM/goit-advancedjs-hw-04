@@ -22,7 +22,7 @@ elements.form.addEventListener('submit', onSearch);
 
 const gallery = {
   page: 1,
-  per_page: 10,
+  per_page: 40,
   query: '',
   max_size: 0,
   loadedImages: 0,
