@@ -74,8 +74,8 @@ function renderImages(images) {
         </div>
         </a>`;
     })
-    .map(card => `<li class="gallery-item>${card}</li>`)
+    .map(card => `<li class="gallery-item">${card}</li>`)
     .join('');
-    elements.gallery.insertAdjacentHTML('beforeend', `<ul>${photoCards}</ul>`);
+    elements.gallery.insertAdjacentHTML('beforeend', `<ul class="gallery-container">${photoCards}</ul>`);
     lightbox.refresh();
 }

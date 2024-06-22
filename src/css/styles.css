@@ -21,3 +21,45 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }
+
+.gallery-container {
+  padding: unset;
+  margin: 24px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 24px;
+  justify-content: center;
+}
+
+@media screen and (min-width: 656px) {
+  .gallery-item {
+    width: calc((100% - 72px) / 2);
+  }
+}
+
+@media screen and (min-width: 864px) {
+  .gallery-item {
+    width: calc((100% - 48px) / 3);
+  }
+}
+
+.gallery-link {
+  cursor: pointer;
+}
+
+@media screen and (min-width: 1152px) {
+  .gallery-item {
+    width: calc((100% - 72px) / 4);
+  }
+}
+.info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
