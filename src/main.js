@@ -37,10 +37,11 @@ const observerOptions = {
 const observer = new IntersectionObserver((entries, observer) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      loadImages().then(response => {
-        const images = response.hits;
-        renderImages(images);
-      });
+      if(gallery.loadedImages < gallery.max_size) {
+        loadImages().then(({hits: images}) => {
+          renderImages(images);
+        });
+      }
       if (gallery.loadedImages >= gallery.max_size) {
         observer.unobserve(elements.contentLoader); // stop observing if max size reached
         iziToast.info({
@@ -57,24 +58,23 @@ async function onSearch(event) {
   elements.gallery.innerHTML = ''; // reset gallery content
   observer.unobserve(elements.contentLoader); // stop observing if new search request to prevent double loading
   gallery.next_page = 1;
-  gallery.query = elements.form.elements.searchQuery.value;
+  gallery.query = elements.form.elements.searchQuery.value.trim();
   gallery.loadedImages = 0; // reset loaded images count
 
   try {
     elements.spinner.spin(elements.loader);
     elements.submitBtn.setAttribute('disabled', 'disabled');
-    const response = await loadImages();
-    const images = response.hits;
-    if (response.totalHits === 0) {
+    const { hits: images, totalHits } = await loadImages();
+    if (totalHits === 0) {
       showError(
         'Sorry, there are no images matching your search query. Please try again.'
       );
     } else {
-      gallery.max_size = response.totalHits;
+      gallery.max_size = totalHits;
       renderImages(images);
       iziToast.success({
         title: 'Success',
-        message: `Hooray! We found ${response.totalHits} images.`,
+        message: `Hooray! We found ${totalHits} images.`,
         position: 'topRight',
       });
       observer.observe(elements.contentLoader);
@@ -104,10 +104,10 @@ async function loadImages(
   elements.submitBtn.setAttribute('disabled', 'disabled');
 
   try {
-    const response = await getImagesByKeywords(searchQuery, page, per_page);
+    const data  = await getImagesByKeywords(searchQuery, page, per_page);
     gallery.next_page += 1;
-    gallery.loadedImages += response.hits.length; // update loaded images count
-    return response;
+    gallery.loadedImages += data.hits.length; // update loaded images count
+    return data;
   } catch (error) {
     if (gallery.next_page == 1) {
       // when the first call failed, we expect onSearch() to handle it
