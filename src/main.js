@@ -40,15 +40,14 @@ const observer = new IntersectionObserver((entries, observer) => {
       loadImages().then(response => {
         const images = response.hits;
         renderImages(images);
-        if (gallery.loadedImages >= gallery.max_size) {
-          observer.unobserve(elements.contentLoader); // stop observing if max size reached
-          iziToast.info({
-            message:
-              "We're sorry, but you've reached the end of search results.",
-            position: 'topRight',
-          });
-        }
       });
+      if (gallery.loadedImages >= gallery.max_size) {
+        observer.unobserve(elements.contentLoader); // stop observing if max size reached
+        iziToast.info({
+          message: "We're sorry, but you've reached the end of search results.",
+          position: 'topRight',
+        });
+      }
     }
   });
 }, observerOptions);
@@ -103,25 +102,24 @@ async function loadImages(
 ) {
   elements.spinner.spin(elements.gallery);
   elements.submitBtn.setAttribute('disabled', 'disabled');
-  return getImagesByKeywords(searchQuery, page, per_page)
-    .then(response => {
-      gallery.next_page += 1;
-      gallery.loadedImages += response.hits.length; // update loaded images count
-      return response;
-    })
-    .catch(error => {
-      if (gallery.next_page == 1) {
-        // when the rist call failed, we expect onSearch() to handle it
-        throw new Error(error);
-      } else {
-        // when any sunsequent call failed, we handle the error ourselves
-        showError(error.message);
-      }
-    })
-    .finally(() => {
-      elements.spinner.stop();
-      elements.submitBtn.removeAttribute('disabled');
-    });
+
+  try {
+    const response = await getImagesByKeywords(searchQuery, page, per_page);
+    gallery.next_page += 1;
+    gallery.loadedImages += response.hits.length; // update loaded images count
+    return response;
+  } catch (error) {
+    if (gallery.next_page == 1) {
+      // when the first call failed, we expect onSearch() to handle it
+      throw new Error(error);
+    } else {
+      // when any subsequent call failed, we handle the error ourselves
+      showError(error.message);
+    }
+  } finally {
+    elements.spinner.stop();
+    elements.submitBtn.removeAttribute('disabled');
+  }
 }
 
 function renderImages(images) {
