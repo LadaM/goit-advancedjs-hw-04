@@ -21,7 +21,7 @@ const elements = {
 elements.form.addEventListener('submit', onSearch);
 
 const gallery = {
-  page: 1,
+  next_page: 1,
   per_page: 40,
   query: '',
   max_size: 0,
@@ -56,7 +56,8 @@ const observer = new IntersectionObserver((entries, observer) => {
 async function onSearch(event) {
   event.preventDefault();
   elements.gallery.innerHTML = ''; // reset gallery content
-  gallery.page = 1;
+  observer.unobserve(elements.contentLoader); // stop observing if new search request to prevent double loading
+  gallery.next_page = 1;
   gallery.query = elements.form.elements.searchQuery.value;
   gallery.loadedImages = 0; // reset loaded images count
 
@@ -77,9 +78,7 @@ async function onSearch(event) {
         message: `Hooray! We found ${response.totalHits} images.`,
         position: 'topRight',
       });
-      if (gallery.loadedImages < gallery.max_size) {
-        observer.observe(elements.contentLoader);
-      }
+      observer.observe(elements.contentLoader);
     }
   } catch (error) {
     showError(error.message);
@@ -99,19 +98,19 @@ function showError(message) {
 
 async function loadImages(
   searchQuery = gallery.query,
-  page = gallery.page,
+  page = gallery.next_page,
   per_page = gallery.per_page
 ) {
   elements.spinner.spin(elements.gallery);
   elements.submitBtn.setAttribute('disabled', 'disabled');
   return getImagesByKeywords(searchQuery, page, per_page)
     .then(response => {
-      gallery.page += 1;
+      gallery.next_page += 1;
       gallery.loadedImages += response.hits.length; // update loaded images count
       return response;
     })
     .catch(error => {
-      if (gallery.page == 1) {
+      if (gallery.next_page == 1) {
         // when the rist call failed, we expect onSearch() to handle it
         throw new Error(error);
       } else {
@@ -133,6 +132,11 @@ function renderImages(images) {
     galleryContainer = document.createElement('ul');
     galleryContainer.classList.add('gallery-container');
     elements.gallery.appendChild(galleryContainer);
+  }
+
+  // adjust scroll position for the first page
+  if (gallery.next_page == 2) {
+    adjustScrollPosition();
   }
 
   const photoCards = images
@@ -167,11 +171,13 @@ function renderImages(images) {
   elements.lightbox.refresh();
 }
 
-const { height: cardHeight } = document
-  .querySelector('.gallery')
-  .firstElementChild.getBoundingClientRect();
+function adjustScrollPosition() {
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
 
-window.scrollBy({
-  top: cardHeight * 2,
-  behavior: 'smooth',
-});
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
+}

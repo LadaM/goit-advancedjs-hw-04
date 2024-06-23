@@ -6,15 +6,16 @@ const BASE_URL = 'https://pixabay.com/api/';
 const MAX_KEYWORD_LENGTH = 100;
 
 async function getImagesByKeyword(searchString, page = 1, per_page = 40) {
-  if (searchString.length > MAX_KEYWORD_LENGTH) {
+  const searchStringTrimmed = searchString.trim();
+  if (searchStringTrimmed.length > MAX_KEYWORD_LENGTH) {
     throw new Error('Keyword is too long');
   }
 
-  if (!searchString) {
+  if (!searchStringTrimmed) {
     throw new Error('Keyword is required');
   }
 
-  const keywords = searchString.trim().split(/\s+/);
+  const keywords = searchStringTrimmed.split(/\s+/);
   const searchQuery = keywords.join('+');
   return axios
     .get(
